@@ -83,7 +83,7 @@ namespace FenixLib.IO
 
             /// <summary>
             /// Most native format's magic follow the pattern 'aXY' where XY indicates, for
-            /// non 8bpp formats, the bpp (01, 16 or 32). For 8bpp formats, XY ar two 
+            /// non 8bpp formats, the bpp (01, 16 or 32). For 8bpp formats, XY ar two
             /// characters.
             /// </summary>
 			public int ParseBitsPerPixelFromMagic ()

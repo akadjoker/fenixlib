@@ -78,6 +78,7 @@
     <Compile Include="Imaging\PixelWriterRgbIndexed.cs" />
     <Compile Include="Imaging\PixelWriterRgbInt16.cs" />
     <Compile Include="IO\ConcatenatedStream.cs" />
+    <Compile Include="IO\DivFilePaletteBodyDecoder.cs" />
     <Compile Include="IO\DivFntBitmapFontEncoder.cs" />
     <Compile Include="IO\ExtendedFntBitmapFontEncoder.cs" />
     <Compile Include="Core\ISprite.cs" />
@@ -86,9 +87,13 @@
     <Compile Include="Core\Graphic.cs" />
     <Compile Include="IO\GlyphInfo.cs" />
     <Compile Include="IO\ExtendedGlyphInfoBuilder.cs" />
+    <Compile Include="IO\HeaderValidationActions.cs" />
     <Compile Include="IO\IExtendedGlyphInfoBuilder.cs" />
     <Compile Include="IO\IGlyphInfoProperties.cs" />
+    <Compile Include="IO\INativeDecoderHelper.cs" />
     <Compile Include="IO\ILegacyGlyphInfoBuilder.cs" />
+    <Compile Include="IO\INativeFormatBodyDecoder.cs" />
+    <Compile Include="IO\NativeDecoderHelper.cs" />
     <Compile Include="IO\NativeFormatReader.cs" />
     <Compile Include="IO\NativeFormatWriter.PivotPointsArranger.cs" />
     <Compile Include="IO\LegacyGlyphInfoBuilder.cs" />

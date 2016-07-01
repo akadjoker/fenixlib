@@ -12,31 +12,33 @@
 *   See the License for the specific language governing permissions and
 *   limitations under the License.
 */
+using System;
 using FenixLib.Core;
 using static FenixLib.IO.NativeFormat;
 
 namespace FenixLib.IO
 {
+    // TODO: After regractoring of NativeDecoder, this and other decoder classes merely
+    // delegate on the BodyDecoders. A Factory to create different type of decoders might be
+    // more appropiate for exposing functionality of the API.
     public class DivFilePaletteDecoder : NativeDecoder<Palette>
     {
+        private static string[] knownExtensions = { "pal", "map", "fpg", "fnt" };
+        private static string[] knownMagics = { "pal", "map", "fpg", "fnt" };
 
-        public override int MaxSupportedVersion { get; } = 0;
+        private static NativeDecoderHelper<Palette> decoderHelper =
+            new NativeDecoderHelper<Palette> (
+                ValidateHeaderActionFactory.Create ( knownMagics, 0 ),
+                new DivFilePaletteBodyDecoder ()
+                );
 
-        protected override string[] KnownFileExtensions { get; } = { "pal", "map", "fpg", "fnt" };
-
-        protected override string[] KnownFileMagics { get; } =
+        public DivFilePaletteDecoder() : this ( decoderHelper )
         {
-            "fnt", "map", "fpg", "pal"
-        };
+        }
 
-        protected override Palette ReadBody ( Header header, NativeFormatReader reader )
+        public DivFilePaletteDecoder (INativeDecoderHelper<Palette> decoderHelper) :
+            base ( knownExtensions, decoderHelper )
         {
-            // Map files have the Palette data in a different position than the
-            // rest of the files
-            if ( header.Magic == "map" )
-                reader.ReadBytes ( 40 );
-
-            return reader.ReadPalette ();
         }
     }
 }

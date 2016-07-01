@@ -42,150 +42,21 @@ namespace FenixLib.IO
     /// <typeparam name="T">The </typeparam>
 	public abstract class NativeDecoder<T> : IDecoder<T>
     {
-        /// <summary>
-        /// The highest version number that the decoder expects to be capable of reading.
-        /// </summary>
-        public abstract int MaxSupportedVersion { get; }
 
-        /// <summary>
-        /// Decodes the body of the native format and returns a <see cref="FenixLib"/> base
-        /// type.
-        /// </summary>
-        /// <param name="header">A header object containing information of the magic, terminator
-        /// and version.</param>
-        /// <param name="reader">A <see cref="BinaryNativeFormatReader"/> that is used to read the
-        /// stream</param>
-        /// <returns></returns>
-        protected abstract T ReadBody ( Header header, NativeFormatReader reader );
+        public IEnumerable<string> SupportedExtensions { get; private set; }
 
-        /// <summary>
-        /// The list of magic
-        /// </summary>
-        protected abstract string[] KnownFileMagics { get; }
+        private readonly INativeDecoderHelper<T> streamDecoderHelper;
 
-        /// <summary>
-        /// The list of extensions that the Decoder expects to be capable of reading.
-        /// </summary>
-        protected abstract string[] KnownFileExtensions { get; }
-
-        public IEnumerable<string> SupportedExtensions
+        protected NativeDecoder (IEnumerable<string> supportedExtensions,
+            INativeDecoderHelper<T> streamDecoderHelper )
         {
-            get { return KnownFileExtensions; }
+            SupportedExtensions = supportedExtensions;
+            this.streamDecoderHelper = streamDecoderHelper;
         }
 
-        /// <summary>
-        /// GZip files start always with bytes {31, 139}. This function
-        /// will check if the argument matches that criteria.
-        /// </summary>
-        /// <param name="header">An array of bytes containing at least two elements</param>
-        /// <returns>True if the first two bytes <paramref name="header"/> are
-        /// that of GZip format.</returns>
-		protected static bool HeaderIsGZip ( byte[] header )
+        public T Decode ( Stream input )
         {
-            return header.Length >= 2 & header[0] == 31 & header[1] == 139;
-        }
-
-
-        protected virtual bool ValidateHeaderMagic ( string magic, Header header )
-        {
-            return KnownFileMagics.Contains ( magic );
-        }
-
-        protected virtual bool ValidateHeaderTerminator ( byte[] terminator, Header header )
-        {
-            return header.IsTerminatorValid ();
-        }
-
-        protected virtual bool ValidateHeaderVersion ( int version, Header header )
-        {
-            return version <= MaxSupportedVersion;
-        }
-
-        /// <summary>
-        /// Decodes the stream and returns a <see cref="FenixLib"/> base type.
-        /// </summary>
-        /// <param name="input">The stream from which to read.</param>
-        /// <returns>A <see cref="FenixLib"/> base type.</returns>
-		public T Decode ( Stream input )
-        {
-            if ( input == null )
-            {
-                throw new ArgumentNullException ( nameof ( input ) );
-            }
-
-            /* Native formats support GZip compression transparently
-             * This function will read the first two bytes of the file and determine if it
-             * is a GZip file, in which case it will use a GZipStream object to read it.
-             */
-
-            Header header;
-            Stream bodyStream = null;
-
-            byte[] headerBytes = new byte[8];
-
-            if ( input.Read ( headerBytes, 0, 2 ) != 2 )
-                throw new UnsuportedFileFormatException (); // TODO: Customize
-
-            if ( HeaderIsGZip ( headerBytes ) )
-            {
-                // Concatenate a memory stream containing a GZipHeader with the input stream
-                // so as to be able to use a GZipStream to read the bytes of the body
-                using ( var GzipHeaderStream = new MemoryStream ( new byte[] { 31, 139 } ) )
-                {
-                    Stream concatenated = new ConcatenatedStream ( GzipHeaderStream, input );
-                    bodyStream = new GZipStream ( concatenated, CompressionMode.Decompress );
-
-                    if ( bodyStream.Read ( headerBytes, 0, 8 ) != 8 )
-                        throw new UnsuportedFileFormatException ();
-                }
-            }
-            else
-            {
-                // Read the remaining 6 bytes of the header
-                if ( input.Read ( headerBytes, 2, 6 ) != 6 )
-                    throw new UnsuportedFileFormatException ();
-
-                bodyStream = input;
-            }
-
-            using ( MemoryStream headerStream = new MemoryStream ( headerBytes ) )
-            {
-                using ( var reader = CreateNativeFormatReader ( headerStream ) )
-                {
-                    header = reader.ReadHeader ();
-
-                    if ( !ValidateHeaderMagic ( header.Magic, header ) )
-                        throw new UnsuportedFileFormatException (); // TODO: Customize
-
-                    if ( !ValidateHeaderTerminator ( header.Terminator, header ) ) // TODO: Customize
-                        throw new UnsuportedFileFormatException ();
-
-                    if ( !ValidateHeaderVersion ( header.LastByte, header ) ) // TODO: Customize
-                        throw new UnsuportedFileFormatException ();
-                }
-            }
-
-            using ( var reader = new BinaryNativeFormatReader ( bodyStream ) )
-            {
-                return ReadBody ( header, reader );
-            }
-
-        }
-
-        /// <summary>
-        /// Creates an <see cref="NativeFormatReader"/>.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// This method is necessary to avoid dependency on the <see cref="BinaryNativeFormatReader"/>
-        /// class, which is not advisable for unit-testing.
-        /// </remarks>
-        protected virtual NativeFormatReader CreateNativeFormatReader ( Stream stream )
-        {
-            // An alternative to this template method would be an optional parameter
-            // with a factory object that creates the NativeFormatReader
-            return new BinaryNativeFormatReader ( stream );
+            return streamDecoderHelper.Decode ( input );
         }
 
         /// <summary>
